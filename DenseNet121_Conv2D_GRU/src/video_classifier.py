@@ -49,7 +49,7 @@ class VideoClassifier:
         validation_steps=None,
         use_multiprocessing=False,
         class_weight=None,
-        checkpoint_path='mode/checkpoint_best_model.h5'
+        checkpoint_path='model/checkpoint_best_model.h5'
     ):
         checkpoint = ModelCheckpoint(checkpoint_path, verbose=1, save_best_only=True, save_weights_only=True)
         early_stopping = EarlyStopping(patience=4, verbose=1)
