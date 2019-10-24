@@ -17,7 +17,7 @@ class ImageSequenceGenerator(Sequence):
         fps=8,
         sequence_time=3,
         shift_time=1,
-        batch_size=8,
+        batch_size=2,
         shuffle=True,
         seed=None,
         fit_eval=True
@@ -96,7 +96,7 @@ class ImageSequenceGenerator(Sequence):
             np.random.shuffle(self.indexes)
     
     def __len__(self):
-        length = int(np.ceil(len(len(self.start_positions)) / float(self.batch_size)))
+        length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
         return length
     
     def __get_x(self, batch_start_positions):
