@@ -72,14 +72,14 @@ class VideoClassifier:
     def plot_learning_curves(self, filename='plot/learning_curves.html'):
         train_loss = go.Scatter(
             x=list(range(1, len(self.history.history['loss']) + 1)),
-            y=history.history['loss'],
+            y=self.history.history['loss'],
             mode='lines+markers',
             name='Train loss',
             hoverinfo='y'
         )
         val_loss = go.Scatter(
             x=list(range(1, len(self.history.history['val_loss']) + 1)),
-            y=history.history['val_loss'],
+            y=self.history.history['val_loss'],
             mode='lines+markers',
             name='Validation loss',
             hoverinfo='y'
