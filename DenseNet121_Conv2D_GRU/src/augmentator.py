@@ -28,7 +28,7 @@ class Augmentator:
             rs = np.random.RandomState(self.seed)
         else:
             rs = np.random
-        rotate = rs.randint(self.rotation_range[0], self.rotation_range[1])
+        rotate = rs.randint(self.rotation_range[0], self.rotation_range[1] + 1)
         translate_percent = {
             'x': rs.uniform(self.width_shift_range[0], self.width_shift_range[1]),
             'y': rs.uniform(self.height_shift_range[0], self.height_shift_range[1])

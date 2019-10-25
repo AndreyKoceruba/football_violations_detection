@@ -42,6 +42,7 @@ class ImageSequenceGenerator(Sequence):
         self.skip_id = []
         self.start_positions = []
         self.indexes = None
+        self.length = None
         
         self.__check_videos_total_time()
         self.__make_start_positions()
@@ -96,8 +97,8 @@ class ImageSequenceGenerator(Sequence):
             np.random.shuffle(self.indexes)
     
     def __len__(self):
-        length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
-        return length
+        self.length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
+        return self.length
     
     def __get_x(self, batch_start_positions):
         batch_x = []

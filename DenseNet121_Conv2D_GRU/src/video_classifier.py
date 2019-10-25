@@ -1,14 +1,13 @@
-import plotly.graph_objects as go
-import plotly.offline as pyo
+import numpy as np
 from keras.applications.densenet import DenseNet121
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import Input, GlobalAveragePooling2D, Dense, Dropout, Activation, GRU, TimeDistributed
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
 class VideoClassifier:
     
-    def __init__(self, input_shape, optimizer=Adam()):
+    def __init__(self, input_shape=None, optimizer=Adam()):
         self.densenet_shape = input_shape[1:]
         self.input_shape = input_shape
         self.optimizer = optimizer
@@ -18,7 +17,7 @@ class VideoClassifier:
     def set_model(self, model):
         self.model = model
     
-    def build_model(self):
+    def build_model(self, weights_path=None):
         densenet_inputs = Input(shape=self.densenet_shape)
         densenet = DenseNet121(
             include_top=False,
@@ -38,6 +37,8 @@ class VideoClassifier:
         predictions = Activation('softmax')(x)
         self.model = Model(inputs=sequence_input, outputs=predictions)
         self.model.compile(self.optimizer, loss='categorical_crossentropy')
+        if weights_path is not None:
+            self.model.load_weights(weights_path)
         
     def fit(
         self,
@@ -69,27 +70,21 @@ class VideoClassifier:
         )
         return self.history
     
-    def plot_learning_curves(self, filename='plot/learning_curves.html'):
-        train_loss = go.Scatter(
-            x=list(range(1, len(self.history.history['loss']) + 1)),
-            y=self.history.history['loss'],
-            mode='lines+markers',
-            name='Train loss',
-            hoverinfo='y'
-        )
-        val_loss = go.Scatter(
-            x=list(range(1, len(self.history.history['val_loss']) + 1)),
-            y=self.history.history['val_loss'],
-            mode='lines+markers',
-            name='Validation loss',
-            hoverinfo='y'
-        )
-
-        data = [train_loss, val_loss]
-        layout = go.Layout(
-            title=dict(
-                text='Learning curves'
-            )
-        )
-        fig = go.Figure(data=data, layout=layout)
-        pyo.plot(fig, filename=filename)
+    def predict(self, generator):
+        if generator.fit_eval:
+            y_true = []
+        y_pred = []
+        for idx in range(int(np.ceil(len(generator.start_positions) / float(generator.batch_size)))):
+            if generator.fit_eval:
+                batch_x, batch_y = generator.getitem(idx)
+                y_true.append(batch_y)
+            else:
+                batch_x = generator.getitem(idx)
+            batch_y_pred = self.model.predict_on_batch(batch_x)
+            y_pred.append(batch_y_pred)
+        y_pred = np.vstack(y_pred)
+        if generator.fit_eval:
+            y_true = np.vstack(y_true)
+            return y_true, y_pred
+        else:
+            return y_pred
