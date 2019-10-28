@@ -10,9 +10,9 @@ class ImageSequenceGenerator(Sequence):
         self,
         videos,
         ids,
-        classes,
-        class_names,
-        augmentator,
+        classes=None,
+        class_names=None,
+        augmentator=None,
         target_size=(224, 224),
         fps=8,
         sequence_time=3,
@@ -117,7 +117,8 @@ class ImageSequenceGenerator(Sequence):
                     frame_sequence.append(frame)
                     current_pos += next_frame_step
                 frame_sequence = np.array(frame_sequence)
-                frame_sequence = self.augmentator.augment(frame_sequence)
+                if self.augmentator is not None:
+                    frame_sequence = self.augmentator.augment(frame_sequence)
             batch_x.append(frame_sequence)
         batch_x = np.array(batch_x)
         return batch_x
@@ -131,7 +132,7 @@ class ImageSequenceGenerator(Sequence):
         batch_y = to_categorical(batch_y, num_classes=len(self.class_names))
         return batch_y
     
-    def __getitem__(self, idx):
+    def getitem(self, idx):
         indexes = self.indexes[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_start_positions = [self.start_positions[i] for i in indexes]
         batch_x = self.__get_x(batch_start_positions)
@@ -140,5 +141,6 @@ class ImageSequenceGenerator(Sequence):
             return batch_x, batch_y
         return batch_x
     
-    def getitem(self, idx):
-        return self.__getitem__(idx)
+    def __getitem__(self, idx):
+        return self.getitem(idx)
+        
