@@ -37,7 +37,6 @@ class ImageSequenceGenerator(Sequence):
         self.fit_eval = fit_eval
         
         self.timesteps = self.fps * self.sequence_time
-        self.shift_frames = self.fps * self.shift_time
         
         self.skip_id = []
         self.start_positions = []
@@ -66,13 +65,6 @@ class ImageSequenceGenerator(Sequence):
                     )
                     warnings.warn(ShortVideoWarning(warn_message))
     
-    def __next_frame_step(self, fps):
-        if self.fps is None:
-            next_frame_step = 1
-        else:
-            next_frame_step = int(np.ceil(fps / self.fps))
-        return next_frame_step
-    
     def __make_start_positions(self):
         for id_ in self.ids:
             if id_ not in self.skip_id:
@@ -80,11 +72,11 @@ class ImageSequenceGenerator(Sequence):
                 with VideoStream(video_path) as cap:
                     frames_cnt = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                     fps = cap.get(cv2.CAP_PROP_FPS)
-                    next_frame_step = self.__next_frame_step(fps)
+                    shift_frames = fps * self.shift_time
                     start_positions = range(
                         0,
-                        frames_cnt - self.timesteps * next_frame_step,
-                        self.shift_frames * next_frame_step
+                        frames_cnt - np.max((shift_frames, self.timesteps)),
+                        shift_frames
                     )
                     for start_position in start_positions:
                         self.start_positions.append((id_, start_position))
@@ -100,6 +92,13 @@ class ImageSequenceGenerator(Sequence):
         self.length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
         return self.length
     
+    def __next_frame_step(self, fps):
+        if self.fps is None:
+            next_frame_step = 1
+        else:
+            next_frame_step = int(np.ceil(fps / self.fps))
+        return next_frame_step
+
     def __get_x(self, batch_start_positions):
         batch_x = []
         for id_, start_position in batch_start_positions:
