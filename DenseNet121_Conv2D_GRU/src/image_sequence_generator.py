@@ -72,7 +72,7 @@ class ImageSequenceGenerator(Sequence):
                 with VideoStream(video_path) as cap:
                     frames_cnt = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                     fps = cap.get(cv2.CAP_PROP_FPS)
-                    shift_frames = fps * self.shift_time
+                    shift_frames = int(np.ceil(fps * self.shift_time))
                     start_positions = range(
                         0,
                         frames_cnt - np.max((shift_frames, self.timesteps)),
