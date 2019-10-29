@@ -100,7 +100,7 @@ class ImageSequenceGenerator(Sequence):
         self.length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
         return self.length
 
-    def __get_x(self, batch_start_positions):
+    def __get_x_old(self, batch_start_positions):
         batch_x = []
         for id_, start_position in batch_start_positions:
             video_path = os.path.join(self.videos, id_)
@@ -120,6 +120,41 @@ class ImageSequenceGenerator(Sequence):
                 if self.augmentator is not None:
                     frame_sequence = self.augmentator.augment(frame_sequence)
             batch_x.append(frame_sequence)
+        batch_x = np.array(batch_x)
+        return batch_x
+
+    def __get_x(self, batch_start_positions):
+        batch_x = []
+        batch_start_positions_sort = batch_start_positions.copy()
+        batch_start_positions_sort.sort()
+        video_positions = dict()
+        for id_, start_position in batch_start_positions_sort:
+            if id_ not in video_positions:
+                video_positions[id_] = [start_position]
+            else:
+                video_positions[id_].append(start_position)
+        batch_start_positions_dict = dict()
+        for id_ in video_positions:
+            video_path = os.path.join(self.videos, id_)
+            with VideoStream(video_path) as cap:
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                next_frame_step = self.__next_frame_step(fps)
+                for start_position in video_positions[id_]:
+                    frame_sequence = []
+                    current_pos = start_position
+                    for i in range(self.timesteps):
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, current_pos)
+                        ret, frame = cap.read()
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        frame = cv2.resize(frame, self.target_size)
+                        frame_sequence.append(frame)
+                        current_pos += next_frame_step
+                    frame_sequence = np.array(frame_sequence)
+                    if self.augmentator is not None:
+                        frame_sequence = self.augmentator.augment(frame_sequence)
+                    batch_start_positions_dict[(id_, start_position)] = frame_sequence
+        for key in batch_start_positions:
+            batch_x.append(batch_start_positions_dict[key])
         batch_x = np.array(batch_x)
         return batch_x
     

@@ -31,7 +31,7 @@ class VideoClassifier:
 
         sequence_input = Input(shape=self.input_shape)
         x = TimeDistributed(densenet_model)(sequence_input)
-        x = GRU(256)(x)
+        x = GRU(128)(x)
         x = Dropout(0.2)(x)
         x = Dense(2)(x)
         predictions = Activation('softmax')(x)
