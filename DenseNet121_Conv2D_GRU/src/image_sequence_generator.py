@@ -109,17 +109,13 @@ class ImageSequenceGenerator(Sequence):
                 next_frame_step = self.__next_frame_step(fps)
                 frame_sequence = []
                 current_pos = start_position
-                k = 1
                 for i in range(self.timesteps):
                     cap.set(cv2.CAP_PROP_POS_FRAMES, current_pos)
                     ret, frame = cap.read()
-                    if ret == 0:
-                    	print(self.timesteps, k)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frame = cv2.resize(frame, self.target_size)
                     frame_sequence.append(frame)
                     current_pos += next_frame_step
-                    k += 1
                 frame_sequence = np.array(frame_sequence)
                 if self.augmentator is not None:
                     frame_sequence = self.augmentator.augment(frame_sequence)
