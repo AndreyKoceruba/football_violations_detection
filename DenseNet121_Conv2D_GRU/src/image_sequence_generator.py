@@ -65,6 +65,13 @@ class ImageSequenceGenerator(Sequence):
                     )
                     warnings.warn(ShortVideoWarning(warn_message))
     
+    def __next_frame_step(self, fps):
+        if self.fps is None:
+            next_frame_step = 1
+        else:
+            next_frame_step = int(np.ceil(fps / self.fps))
+        return next_frame_step
+
     def __make_start_positions(self):
         for id_ in self.ids:
             if id_ not in self.skip_id:
@@ -73,9 +80,10 @@ class ImageSequenceGenerator(Sequence):
                     frames_cnt = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                     fps = cap.get(cv2.CAP_PROP_FPS)
                     shift_frames = int(np.ceil(fps * self.shift_time))
+                    next_frame_step = self.__next_frame_step(fps)
                     start_positions = range(
                         0,
-                        frames_cnt - np.max((shift_frames, self.timesteps)),
+                        frames_cnt - np.max((shift_frames, self.timesteps * next_frame_step)),
                         shift_frames
                     )
                     for start_position in start_positions:
@@ -91,13 +99,6 @@ class ImageSequenceGenerator(Sequence):
     def __len__(self):
         self.length = int(np.ceil(len(self.start_positions) / float(self.batch_size)))
         return self.length
-    
-    def __next_frame_step(self, fps):
-        if self.fps is None:
-            next_frame_step = 1
-        else:
-            next_frame_step = int(np.ceil(fps / self.fps))
-        return next_frame_step
 
     def __get_x(self, batch_start_positions):
         batch_x = []
@@ -108,13 +109,17 @@ class ImageSequenceGenerator(Sequence):
                 next_frame_step = self.__next_frame_step(fps)
                 frame_sequence = []
                 current_pos = start_position
+                k = 1
                 for i in range(self.timesteps):
                     cap.set(cv2.CAP_PROP_POS_FRAMES, current_pos)
                     ret, frame = cap.read()
+                    if ret == 0:
+                    	print(self.timesteps, k)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frame = cv2.resize(frame, self.target_size)
                     frame_sequence.append(frame)
                     current_pos += next_frame_step
+                    k += 1
                 frame_sequence = np.array(frame_sequence)
                 if self.augmentator is not None:
                     frame_sequence = self.augmentator.augment(frame_sequence)
